@@ -32,12 +32,21 @@ jobs:
         name: ancient-warfare2-build
         path: build/libs/*.jar
         if-no-files-found: error
-    - name: Publish GitHub Release
+    - name: Publish GitHub Release (readable version)
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        tag="aw2-build-$(date +%Y%m%d-%H%M%S)"
-        gh release create "$tag" build/libs/*.jar \
+        set -e
+        # pick the main jar (exclude -sources)
+        main_jar=$(ls build/libs/*.jar | grep -v '\-sources\.jar' | head -n1)
+        echo "main jar: $main_jar"
+        base=$(basename "$main_jar")
+        # extract mod version from e.g. ancientwarfare-1.12.2-2.10.2.jar -> 2.10.2
+        ver=$(echo "$base" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | tail -n1)
+        build_num="${{ github.run_number }}"
+        tag="v${ver}-build.${build_num}"
+        echo "release tag: $tag"
+        gh release create "$tag" "$main_jar" build/libs/*-sources.jar \
           --repo "${{ github.repository }}" \
-          --title "Ancient Warfare 2 build $tag" \
+          --title "Ancient Warfare 2 v${ver} (build #${build_num})" \
           --notes "Automated build from branch ${{ github.ref_name }} (MC 1.12.2, Forge 14.23.5.2816). Built with GitHub Actions."
