@@ -1,6 +1,8 @@
 name: Mod Build
 
-on: [push]
+on:
+  push:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -8,23 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up JDK 1.11
-      uses: actions/setup-java@v1
+    - uses: actions/checkout@v4
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
       with:
-        java-version: 1.11
+        distribution: temurin
+        java-version: 8
+    - name: Make gradlew executable
+      run: chmod +x gradlew
     - name: Build with Gradle
       run: |
         ./gradlew clean
         ./gradlew setupCIWorkspace
-        ./gradlew build
-    - name: Publish to Github Packages
-      env:
-        GPR_USER: ${{ secrets.GPR_USER }}
-        GPR_API_KEY: ${{ secrets.GPR_TOKEN }}
-      run: ./gradlew build publish --stacktrace
-    - name: Code Quality
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: ./gradlew -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }} -Dsonar.organization=p3pp3rf1y-github sonarqube
-      
+        ./gradlew build --stacktrace
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ancient-warfare2-build
+        path: build/libs/*.jar
+        if-no-files-found: error
