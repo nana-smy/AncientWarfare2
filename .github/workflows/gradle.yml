@@ -4,6 +4,9 @@ on:
   push:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
 
@@ -29,3 +32,12 @@ jobs:
         name: ancient-warfare2-build
         path: build/libs/*.jar
         if-no-files-found: error
+    - name: Publish GitHub Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        tag="aw2-build-$(date +%Y%m%d-%H%M%S)"
+        gh release create "$tag" build/libs/*.jar \
+          --repo "${{ github.repository }}" \
+          --title "Ancient Warfare 2 build $tag" \
+          --notes "Automated build from branch ${{ github.ref_name }} (MC 1.12.2, Forge 14.23.5.2816). Built with GitHub Actions."
